@@ -78,7 +78,7 @@ Click [here](./ClientDemo.Application/JsonServerClient/Concrete/JsonServerDemoCl
 
 #### Authorization
 
-*ClientBase* include `CreateHttpRequestMessageAsync()` method for authorization.This method add authorization with token and token type to the header.
+*ClientBase* include `CreateHttpRequestMessageAsync()` method for authorization.If Token value isn't null or not empty, this method automatically add authorization with token and token type to the header.
 
 ```csharp
 protected Task<HttpRequestMessage> CreateHttpRequestMessageAsync()
@@ -90,6 +90,19 @@ protected Task<HttpRequestMessage> CreateHttpRequestMessageAsync()
 	}
 	return Task.FromResult(msg);
 }
+```
+You can set Token and TokenType value with `SetToken()` and 'SetTokenType()' methods.
+```csharp
+public void SetToken(string token)
+{
+	Token = token;
+}
+
+public void SetTokenType(string tokenType)
+{
+	TokenType = tokenType;
+}
+
 ```
 
 If you need customization before the request, you can override `PrepareRequest(..)` method.
