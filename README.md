@@ -91,7 +91,7 @@ protected Task<HttpRequestMessage> CreateHttpRequestMessageAsync()
 	return Task.FromResult(msg);
 }
 ```
-You can set Token and TokenType value with `SetToken()` and 'SetTokenType()' methods.
+You can set Token and TokenType value with `SetToken()` and `SetTokenType()` methods.
 ```csharp
 public void SetToken(string token)
 {
