@@ -8,7 +8,7 @@ For example you need to consume this api. [https://jsonplaceholder.typicode.com/
 #### ***Create interface***
 ([IJsonServerDemoClient.cs](./ClientDemo.Application/JsonServerClient/Abstract/IJsonServerDemoClient.cs))
 #### ***Create client and implement interface***
-([IJsonServerDemoClient.cs](./ClientDemo.Application/JsonServerClient/Concrete/JsonServerDemoClient.cs))
+([JsonServerDemoClient.cs](./ClientDemo.Application/JsonServerClient/Concrete/JsonServerDemoClient.cs))
 
 In this example *JsonServerDemoClient* uses *ClientBase* and implements *IJsonServerDemoClient*. 
 ```csharp
