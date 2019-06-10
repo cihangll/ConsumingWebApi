@@ -23,9 +23,10 @@ namespace ClientDemo.Core.Web.Client
 			settings.DateFormatHandling = DateFormatHandling.MicrosoftDateFormat;
 		}
 
-		protected virtual void PrepareRequest(HttpClient client, HttpRequestMessage request, string url) { }
-		protected virtual void PrepareRequest(HttpClient client, HttpRequestMessage request, StringBuilder urlBuilder) { }
-		protected virtual void ProcessResponse(HttpClient client, HttpResponseMessage response) { }
+		protected virtual void PrepareRequest(HttpClient client, HttpRequestMessage request, string url, Guid uniqueId) { }
+		protected virtual void PrepareRequest(HttpClient client, HttpRequestMessage request, StringBuilder urlBuilder, Guid uniqueId) { }
+		protected virtual void ProcessResponse(HttpClient client, HttpResponseMessage response, Guid uniqueId) { }
+
 
 		public string Token { get; private set; }
 		public string TokenType { get; private set; }
@@ -96,10 +97,12 @@ namespace ClientDemo.Core.Web.Client
 					request.Method = new HttpMethod(httpMethodType);
 					request.Headers.Accept.Add(MediaTypeWithQualityHeaderValue.Parse(MediaTypes.Json));
 
-					PrepareRequest(client, request, urlBuilder);
+					var uniqueId = Guid.NewGuid();
+
+					PrepareRequest(client, request, urlBuilder, uniqueId);
 					var requestUrl = urlBuilder.ToString();
 					request.RequestUri = new Uri(requestUrl, UriKind.RelativeOrAbsolute);
-					PrepareRequest(client, request, requestUrl);
+					PrepareRequest(client, request, requestUrl, uniqueId);
 
 					#endregion
 
@@ -109,7 +112,7 @@ namespace ClientDemo.Core.Web.Client
 					{
 						var headers = GetHeaders(response);
 
-						ProcessResponse(client, response);
+						ProcessResponse(client, response, uniqueId);
 
 						var result = default(T);
 						//var statusCode = GetStatusCode(response.StatusCode);
