@@ -112,5 +112,5 @@ protected virtual void PrepareRequest(HttpClient client, HttpRequestMessage requ
 protected virtual void PrepareRequest(HttpClient client, HttpRequestMessage request, StringBuilder urlBuilder) { }
 ```
 
-This method is called before the request.
+This method is called before the request.You can find example abstract class [here](./ClientDemo.Application/Abstract/WebApiClientBase.cs).
 
