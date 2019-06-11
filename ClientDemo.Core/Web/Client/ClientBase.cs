@@ -78,7 +78,7 @@ namespace ClientDemo.Core.Web.Client
 			return Task.FromResult(msg);
 		}
 
-		protected async Task<T> SendAsync<T>(string url, string httpMethodType = HttpMethodTypes.GET, object requestData = null, string contentMediaType = MediaTypes.Json)
+		protected async Task<T> SendAsync<T>(string url, string httpMethodType = HttpMethodTypes.GET, object requestData = null, string contentMediaType = ContentMediaTypes.Json)
 		{
 			var urlBuilder = GetAbsoluteUrl(url);
 
@@ -95,7 +95,7 @@ namespace ClientDemo.Core.Web.Client
 					}
 
 					request.Method = new HttpMethod(httpMethodType);
-					request.Headers.Accept.Add(MediaTypeWithQualityHeaderValue.Parse(MediaTypes.Json));
+					request.Headers.Accept.Add(MediaTypeWithQualityHeaderValue.Parse(ContentMediaTypes.Json));
 
 					var uniqueId = Guid.NewGuid();
 
@@ -238,12 +238,12 @@ namespace ClientDemo.Core.Web.Client
 			httpClient.DefaultRequestHeaders.Accept.Clear();
 		}
 
-		private void AddHeadersAccept(HttpClient httpClient, string mediaType = MediaTypes.Json)
+		private void AddHeadersAccept(HttpClient httpClient, string mediaType = ContentMediaTypes.Json)
 		{
 			httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue(mediaType));
 		}
 
-		protected HttpContent CreateHttpContent<T>(T content, string mediaType = MediaTypes.Json)
+		protected HttpContent CreateHttpContent<T>(T content, string mediaType = ContentMediaTypes.Json)
 		{
 			if (content == null)
 			{
@@ -251,7 +251,7 @@ namespace ClientDemo.Core.Web.Client
 			}
 
 			//work here for other types...
-			if (mediaType == MediaTypes.UrlEncoded)
+			if (mediaType == ContentMediaTypes.UrlEncoded)
 			{
 				return CreateHttpContentFormUrlEncoded(content);
 			}

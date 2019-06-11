@@ -1,6 +1,6 @@
-﻿using ClientDemo.Application.JsonServerClient.Abstract;
+﻿using ClientDemo.Application.Abstract;
+using ClientDemo.Application.JsonServerClient.Abstract;
 using ClientDemo.Application.JsonServerClient.Contracts.Response;
-using ClientDemo.Core.Web.Client;
 using ClientDemo.Core.Web.Client.Models;
 using System;
 using System.Collections.ObjectModel;
@@ -9,14 +9,17 @@ using System.Threading.Tasks;
 
 namespace ClientDemo.Application.JsonServerClient.Concrete
 {
-	public class JsonServerDemoClient : ClientBase, IJsonServerDemoClient
+	public class JsonServerDemoClient : WebApiClientBase, IJsonServerDemoClient
 	{
 		private const string _posts = "/posts";
 		private const string _comments = "/comments";
 
 		public JsonServerDemoClient() : base() { }
 
-		public JsonServerDemoClient(string baseUrl) : base(baseUrl) { }
+		public JsonServerDemoClient(string baseUrl) : base()
+		{
+			SetBaseUrl(baseUrl);
+		}
 
 		public async Task<PostResponse> GetPostAsync(int postId)
 		{
