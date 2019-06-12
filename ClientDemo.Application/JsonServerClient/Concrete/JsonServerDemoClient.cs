@@ -29,7 +29,8 @@ namespace ClientDemo.Application.JsonServerClient.Concrete
 			urlBuilder.Append(postId);
 
 			var url = urlBuilder.ToString();
-			return await SendAsync<PostResponse>(url, HttpMethodTypes.GET);
+			var result = await SendAsync(url, HttpMethodTypes.GET);
+			return GetDataFromJsonResult<PostResponse>(result);
 		}
 
 		public async Task<ReadOnlyCollection<PostResponse>> GetPostsByUserId(int userId)
@@ -40,12 +41,14 @@ namespace ClientDemo.Application.JsonServerClient.Concrete
 			urlBuilder.Append(userId);
 
 			var url = urlBuilder.ToString();
-			return await SendAsync<ReadOnlyCollection<PostResponse>>(url, HttpMethodTypes.GET);
+			var result = await SendAsync(url, HttpMethodTypes.GET);
+			return GetDataFromJsonResult<ReadOnlyCollection<PostResponse>>(result);
 		}
 
 		public async Task<ReadOnlyCollection<PostResponse>> GetPostsAsync()
 		{
-			return await SendAsync<ReadOnlyCollection<PostResponse>>(_posts, HttpMethodTypes.GET);
+			var result = await SendAsync(_posts, HttpMethodTypes.GET);
+			return GetDataFromJsonResult<ReadOnlyCollection<PostResponse>>(result);
 		}
 
 		public async Task<CommentResponse> GetCommentAsync(int commentId)
@@ -56,12 +59,14 @@ namespace ClientDemo.Application.JsonServerClient.Concrete
 			urlBuilder.Append(commentId);
 
 			var url = urlBuilder.ToString();
-			return await SendAsync<CommentResponse>(url, HttpMethodTypes.GET);
+			var result = await SendAsync(url, HttpMethodTypes.GET);
+			return GetDataFromJsonResult<CommentResponse>(result);
 		}
 
 		public async Task<ReadOnlyCollection<CommentResponse>> GetCommentsAsync()
 		{
-			return await SendAsync<ReadOnlyCollection<CommentResponse>>(_comments, HttpMethodTypes.GET);
+			var result = await SendAsync(_comments, HttpMethodTypes.GET);
+			return GetDataFromJsonResult<ReadOnlyCollection<CommentResponse>>(result);
 		}
 
 		public async Task<PostResponse> SavePost(PostRequest request)
@@ -71,7 +76,8 @@ namespace ClientDemo.Application.JsonServerClient.Concrete
 				throw new Exception($"{nameof(request)} cannot be null.");
 			}
 
-			return await SendAsync<PostResponse>(_posts, HttpMethodTypes.POST, request);
+			var result = await SendAsync(_posts, HttpMethodTypes.POST, request);
+			return GetDataFromJsonResult<PostResponse>(result);
 		}
 
 	}

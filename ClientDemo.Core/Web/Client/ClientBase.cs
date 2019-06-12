@@ -14,19 +14,18 @@ namespace ClientDemo.Core.Web.Client
 {
 	public abstract class ClientBase
 	{
-
 		private Lazy<JsonSerializerSettings> _jsonSerializerSettings;
 		protected JsonSerializerSettings JsonSerializerSettings { get { return _jsonSerializerSettings.Value; } }
 
 		protected virtual void UpdateJsonSerializerSettings(JsonSerializerSettings settings)
 		{
 			settings.DateFormatHandling = DateFormatHandling.MicrosoftDateFormat;
+			settings.ReferenceLoopHandling = ReferenceLoopHandling.Ignore;
 		}
 
 		protected virtual void PrepareRequest(HttpClient client, HttpRequestMessage request, string url, Guid uniqueId) { }
 		protected virtual void PrepareRequest(HttpClient client, HttpRequestMessage request, StringBuilder urlBuilder, Guid uniqueId) { }
 		protected virtual void ProcessResponse(HttpClient client, HttpResponseMessage response, Guid uniqueId) { }
-
 
 		public string Token { get; private set; }
 		public string TokenType { get; private set; }
@@ -78,89 +77,104 @@ namespace ClientDemo.Core.Web.Client
 			return Task.FromResult(msg);
 		}
 
-		protected async Task<T> SendAsync<T>(string url, string httpMethodType = HttpMethodTypes.GET, object requestData = null, string contentMediaType = ContentMediaTypes.Json)
+		protected async Task<object> CreateClientAndSendAsync(string url, string httpMethodType = HttpMethodTypes.GET, object requestData = null, string contentMediaType = ContentMediaTypes.Json, Func<HttpClient, Task<object>> function = null)
 		{
-			var urlBuilder = GetAbsoluteUrl(url);
-
 			var client = new HttpClient();
 			try
 			{
-				using (var request = await CreateHttpRequestMessageAsync().ConfigureAwait(false))
-				{
-					#region Request
-
-					if (requestData != null)
-					{
-						CreateHttpContent(request, requestData, contentMediaType);
-					}
-
-					request.Method = new HttpMethod(httpMethodType);
-					request.Headers.Accept.Add(MediaTypeWithQualityHeaderValue.Parse(ContentMediaTypes.Json));
-
-					var uniqueId = Guid.NewGuid();
-
-					PrepareRequest(client, request, urlBuilder, uniqueId);
-					var requestUrl = urlBuilder.ToString();
-					request.RequestUri = new Uri(requestUrl, UriKind.RelativeOrAbsolute);
-					PrepareRequest(client, request, requestUrl, uniqueId);
-
-					#endregion
-
-					#region Response
-
-					using (var response = await client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead).ConfigureAwait(false))
-					{
-						var headers = GetHeaders(response);
-
-						ProcessResponse(client, response, uniqueId);
-
-						var result = default(T);
-						//var statusCode = GetStatusCode(response.StatusCode);
-						var responseData = await GetResponseData(response.Content);
-
-						#endregion
-
-						#region Process
-
-						if (typeof(T) == typeof(HttpResponseMessage))
-						{
-							return (T)Convert.ChangeType(response, typeof(T));
-						}
-
-						try
-						{
-							if (response.IsSuccessStatusCode)
-							{
-								result = DeserializeObject<T>(responseData);
-								return result;
-							}
-							else if (response.StatusCode == HttpStatusCode.Unauthorized)
-							{
-								throw new ClientException("Could not authorized.", (int)response.StatusCode, responseData, headers, null);
-							}
-						}
-						catch (Exception exception)
-						{
-							throw new ClientException("Could not deserialize the response body.", (int)response.StatusCode, responseData, headers, exception);
-						}
-
-						if (response.StatusCode != HttpStatusCode.OK)
-						{
-							throw new ClientException("The HTTP status code of the response was not expected (" + (int)response.StatusCode + ").", (int)response.StatusCode, responseData, headers, null);
-						}
-
-						#endregion
-					}
-				}
+				return await function(client);
 			}
 			finally
 			{
 				if (client != null)
 				{ client.Dispose(); };
 			}
+		}
+		protected async Task<object> SendAsync(string url, Func<HttpStatusCode, string, string, Task<object>> function, string httpMethodType = HttpMethodTypes.GET, object requestData = null, string contentMediaType = ContentMediaTypes.Json)
+		{
+			return await CreateClientAndSendAsync(url, httpMethodType, requestData, contentMediaType, async (client) =>
+			{
+				var response = await SendAsync(client, url, httpMethodType, requestData, contentMediaType);
+				if (function != null)
+				{
+					return await function(response.Item1, response.Item2, response.Item3);
+				}
+				return response;
+			});
+		}
 
+		protected async Task<object> SendAsync(string url, Func<HttpStatusCode, string, string, object> function, string httpMethodType = HttpMethodTypes.GET, object requestData = null, string contentMediaType = ContentMediaTypes.Json)
+		{
+			return await CreateClientAndSendAsync(url, httpMethodType, requestData, contentMediaType, async (client) =>
+			{
+				var response = await SendAsync(client, url, httpMethodType, requestData, contentMediaType);
+				if (function != null)
+				{
+					return function(response.Item1, response.Item2, response.Item3);
+				}
+				return response;
+			});
+		}
 
-			return default;
+		protected async Task<Tuple<HttpStatusCode, string, string>> SendAsync(string url, string httpMethodType = HttpMethodTypes.GET, object requestData = null, string contentMediaType = ContentMediaTypes.Json)
+		{
+			return (Tuple<HttpStatusCode, string, string>)await CreateClientAndSendAsync(url, httpMethodType, requestData, contentMediaType, async (client) =>
+			{
+				return await SendAsync(client, url, httpMethodType, requestData, contentMediaType);
+			});
+		}
+
+		protected async Task<Tuple<HttpStatusCode, string, string>> SendAsync(HttpClient client, string url, string httpMethodType = HttpMethodTypes.GET, object requestData = null, string contentMediaType = ContentMediaTypes.Json)
+		{
+			using (var request = await CreateHttpRequestMessageAsync().ConfigureAwait(false))
+			{
+				var urlBuilder = GetAbsoluteUrl(url);
+				#region Request
+
+				if (requestData != null)
+				{
+					CreateHttpContent(request, requestData, contentMediaType);
+				}
+
+				request.Method = new HttpMethod(httpMethodType);
+				request.Headers.Accept.Add(MediaTypeWithQualityHeaderValue.Parse(ContentMediaTypes.Json));
+
+				var uniqueId = Guid.NewGuid();
+
+				PrepareRequest(client, request, urlBuilder, uniqueId);
+				var requestUrl = urlBuilder.ToString();
+				request.RequestUri = new Uri(requestUrl, UriKind.RelativeOrAbsolute);
+				PrepareRequest(client, request, requestUrl, uniqueId);
+
+				#endregion
+
+				#region Response
+
+				using (var response = await client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead).ConfigureAwait(false))
+				{
+					var headers = GetHeaders(response);
+
+					ProcessResponse(client, response, uniqueId);
+
+					var responseData = await GetResponseData(response.Content);
+
+					#endregion
+
+					#region Process
+
+					try
+					{
+						var responseBodyMediaType = response.Content?.Headers?.ContentType?.MediaType;
+						return Tuple.Create(response.StatusCode, responseBodyMediaType, responseData);
+					}
+					catch (Exception exception)
+					{
+						throw new ClientException("Could not deserialize the response body.", (int)response.StatusCode, responseData, headers, exception);
+					}
+
+					#endregion
+				}
+			}
 		}
 
 		protected void CreateHttpContent(HttpRequestMessage request, object requestData, string contentMediaType)
@@ -168,16 +182,6 @@ namespace ClientDemo.Core.Web.Client
 			var content = CreateHttpContent(requestData, contentMediaType);
 			content.Headers.ContentType = MediaTypeHeaderValue.Parse(contentMediaType);
 			request.Content = content;
-		}
-
-		protected async Task<string> GetResponseData(HttpContent httpContent)
-		{
-			return httpContent == null ? null : await httpContent.ReadAsStringAsync().ConfigureAwait(false);
-		}
-
-		protected string GetStatusCode(HttpStatusCode httpStatusCode)
-		{
-			return ((int)httpStatusCode).ToString();
 		}
 
 		protected Dictionary<string, IEnumerable<string>> GetHeaders(HttpResponseMessage response)
@@ -198,6 +202,15 @@ namespace ClientDemo.Core.Web.Client
 			if (jsonData == null)
 			{ return default; }
 			return JsonConvert.DeserializeObject<T>(jsonData);
+		}
+
+		protected T GetDataFromJsonResult<T>(Tuple<HttpStatusCode, string, string> result)
+		{
+			if (string.IsNullOrEmpty(result.Item3))
+			{
+				return default;
+			}
+			return DeserializeObject<T>(result.Item3);
 		}
 
 		protected StringBuilder GetAbsoluteUrl(string url)
@@ -232,7 +245,6 @@ namespace ClientDemo.Core.Web.Client
 			httpClient.DefaultRequestHeaders.Clear();
 		}
 
-		//Update all
 		private void ClearHeadersAccept(HttpClient httpClient)
 		{
 			httpClient.DefaultRequestHeaders.Accept.Clear();
@@ -241,6 +253,12 @@ namespace ClientDemo.Core.Web.Client
 		private void AddHeadersAccept(HttpClient httpClient, string mediaType = ContentMediaTypes.Json)
 		{
 			httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue(mediaType));
+		}
+
+		private async Task<string> GetResponseData(HttpContent httpContent)
+		{
+			//NOTO: you have to call before HttpClient disposed.
+			return httpContent == null ? null : await httpContent.ReadAsStringAsync().ConfigureAwait(false);
 		}
 
 		protected HttpContent CreateHttpContent<T>(T content, string mediaType = ContentMediaTypes.Json)

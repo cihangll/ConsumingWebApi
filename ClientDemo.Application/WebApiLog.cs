@@ -9,7 +9,7 @@ namespace ClientDemo.Application
 		public string RequestUrl { get; set; }
 		public string Headers { get; set; }
 		public string RequestBody { get; set; }
-		public int ResponseCode { get; set; }
+		public int? ResponseCode { get; set; }
 		public string ResponseStatus { get; set; }
 		public string ResponseBody { get; set; }
 		public DateTime? CreatedOn { get; set; }
