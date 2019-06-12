@@ -121,7 +121,7 @@ Sometimes you need to check 200 (OK) and 401(UnAuthorized) status codes and conv
 SendAsync have delegate param for this.
 For Example;
 ```csharp
-public async Task<ReadOnlyCollection<BranchResponse>> GetBranchesAsync(string token)
+public async Task<object> GetBranchesAsync(string token)
 {
 	SetToken(token);
 
@@ -139,6 +139,6 @@ public async Task<ReadOnlyCollection<BranchResponse>> GetBranchesAsync(string to
 		throw new ClientException("The HTTP status code of the response was not expected (" + (int)httpStatusCode + ").", (int)httpStatusCode, responseData, null, null);
 	});
 
-	return (ReadOnlyCollection<BranchResponse>)result;
+	return result;
 }
 ```
