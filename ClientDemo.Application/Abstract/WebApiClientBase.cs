@@ -24,7 +24,7 @@ namespace ClientDemo.Application.Abstract
 			var headers = SerializeHeaders(request.Headers);
 
 			var requestBody = request.Content?.ReadAsStringAsync().Result;
-			var requestBodyMediaType = request.Content?.Headers.ContentType.MediaType;
+			var requestBodyMediaType = request.Content?.Headers?.ContentType?.MediaType;
 			if (requestBodyMediaType == ContentMediaTypes.Json)
 			{
 				requestBody = MaskJsonData(requestBody);
@@ -64,7 +64,7 @@ namespace ClientDemo.Application.Abstract
 			webApiLog.ResponseStatus = response.StatusCode.ToString();
 
 			var responseBody = response.Content?.ReadAsStringAsync().Result;
-			var responseBodyMediaType = response.Content?.Headers.ContentType.MediaType;
+			var responseBodyMediaType = response.Content?.Headers?.ContentType?.MediaType;
 			if (responseBodyMediaType == ContentMediaTypes.Json)
 			{
 				responseBody = MaskJsonData(responseBody);
