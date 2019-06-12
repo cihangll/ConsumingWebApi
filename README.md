@@ -115,3 +115,30 @@ protected virtual void PrepareRequest(HttpClient client, HttpRequestMessage requ
 
 This method is called before the request.You can find example abstract class [here](./ClientDemo.Application/Abstract/WebApiClientBase.cs).
 
+#### Working with complex status code and media type.
+
+Sometimes you need to check 200 (OK) and 401(UnAuthorized) status codes and convert to specific model.
+SendAsync have delegate param for this.
+For Example;
+```csharp
+public async Task<ReadOnlyCollection<BranchResponse>> GetBranchesAsync(string token)
+{
+	SetToken(token);
+
+	var result = await SendAsync(branchUrl, function: (httpStatusCode, responseType, responseData) =>
+	{
+		if (httpStatusCode == HttpStatusCode.OK)
+		{
+			return DeserializeObject<ReadOnlyCollection<BranchResponse>>(responseData);
+		}
+		else if (httpStatusCode == HttpStatusCode.Unauthorized)
+		{
+			return responseData;
+		}
+
+		throw new ClientException("The HTTP status code of the response was not expected (" + (int)httpStatusCode + ").", (int)httpStatusCode, responseData, null, null);
+	});
+
+	return (ReadOnlyCollection<BranchResponse>)result;
+}
+```
