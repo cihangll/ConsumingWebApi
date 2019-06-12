@@ -70,7 +70,8 @@ public async Task<PostResponse> SavePost(PostRequest request)
     throw new Exception($"{nameof(request)} cannot be null.");
   }
 
-  return await SendAsync<PostResponse>(_posts, HttpMethodTypes.POST, request);
+  var result = await SendAsync(_posts, HttpMethodTypes.POST, request);
+  return GetDataFromJsonResult<PostResponse>(result);
 }
 ```
 
