@@ -1,4 +1,5 @@
 ﻿using ClientDemo.Core.Json.NewtonsoftJson.Extensions;
+using ClientDemo.Core.Json.NewtonsoftJson.Helpers;
 using ClientDemo.Core.Web.Client;
 using ClientDemo.Core.Web.Client.Models;
 using Newtonsoft.Json;
@@ -97,7 +98,7 @@ namespace ClientDemo.Application.Abstract
 			{
 				return string.Empty;
 			}
-			return jsonData.MaskFields(_blacklist, _mask);
+			return JsonHelper.Minify(jsonData.MaskFields(_blacklist, _mask));
 		}
 
 		private string MaskUrlEncodedData(string urlEncodedData)
