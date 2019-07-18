@@ -23,6 +23,19 @@ namespace ClientDemo.Core.Web.Client
 			settings.ReferenceLoopHandling = ReferenceLoopHandling.Ignore;
 		}
 
+		protected string ConvertKeyValueListToFormUrlEncodedContent(List<KeyValuePair<string, string>> @params)
+		{
+			if (@params == null)
+			{
+				return string.Empty;
+			}
+
+			using (var content = new FormUrlEncodedContent(@params))
+			{
+				return content.ReadAsStringAsync().Result;
+			}
+		}
+
 		protected virtual void PrepareRequest(HttpClient client, HttpRequestMessage request, string url, Guid uniqueId) { }
 		protected virtual void PrepareRequest(HttpClient client, HttpRequestMessage request, StringBuilder urlBuilder, Guid uniqueId) { }
 		protected virtual void ProcessResponse(HttpClient client, HttpResponseMessage response, Guid uniqueId) { }

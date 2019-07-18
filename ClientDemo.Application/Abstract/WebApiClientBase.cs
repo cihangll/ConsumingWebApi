@@ -15,7 +15,18 @@ namespace ClientDemo.Application.Abstract
 {
 	public abstract class WebApiClientBase : ClientBase
 	{
-		private readonly List<string> _blacklist = new List<string> { "password", "access_token", "token", "refresh_token" };
+		private readonly List<string> _blacklist = new List<string> {
+			"authorization", "*.authorization",
+			"password", "*.password",
+			"access_token", "*.access_token",
+			"token", "*.token",
+			"refresh_token", "*.refresh_token",
+			"sessionId", "*.sessionId",
+			"tckno", "*.tckno*",
+			"phone", "*.phone",
+			"last_four", "*.last_four",
+			"card_info", "*.card_info"
+		};
 		private readonly string _mask = "*****";
 
 		protected WebApiClientBase() { }
@@ -35,13 +46,14 @@ namespace ClientDemo.Application.Abstract
 				requestBody = MaskUrlEncodedData(requestBody);
 			}
 
+			var maskedRequestUrl = MaskUrlParams(request.RequestUri);
 			var webApiLog = new WebApiLog()
 			{
 				Id = uniqueId,
 				Headers = headers,
 				RequestBody = requestBody,
 				RequestType = request.Method?.Method,
-				RequestUrl = url
+				RequestUrl = maskedRequestUrl
 			};
 
 			// work here.
@@ -92,6 +104,33 @@ namespace ClientDemo.Application.Abstract
 			LogToDatabaseAfterRun(response, uniqueId);
 		}
 
+		private List<KeyValuePair<string, string>> MaskQueryParamsAndReturn(string query)
+		{
+			var list = new List<KeyValuePair<string, string>>();
+			var @params = HttpUtility.ParseQueryString(query);
+			foreach (string key in @params.AllKeys)
+			{
+				if (_blacklist.Select(x => x.ToLower()).ToList().Contains(key.ToLower()))
+				{
+					list.Add(new KeyValuePair<string, string>(key, string.Empty));
+					continue;
+				}
+				list.Add(new KeyValuePair<string, string>(key, @params[key]));
+			}
+			return list;
+		}
+
+		private string MaskUrlParams(Uri requestUri)
+		{
+			if (requestUri == null)
+			{
+				return string.Empty;
+			}
+
+			var list = MaskQueryParamsAndReturn(requestUri.Query);
+			return requestUri.GetLeftPart(UriPartial.Path) + "?" + ConvertKeyValueListToFormUrlEncodedContent(list);
+		}
+
 		private string MaskJsonData(string jsonData)
 		{
 			if (string.IsNullOrEmpty(jsonData))
@@ -108,19 +147,7 @@ namespace ClientDemo.Application.Abstract
 				return string.Empty;
 			}
 
-			var list = new List<KeyValuePair<string, string>>();
-			var @params = HttpUtility.ParseQueryString(HttpUtility.UrlDecode(urlEncodedData));
-
-			foreach (string key in @params.AllKeys)
-			{
-				if (_blacklist.Contains(key))
-				{
-					list.Add(new KeyValuePair<string, string>(key, _mask));
-					continue;
-				}
-				list.Add(new KeyValuePair<string, string>(key, @params[key]));
-			}
-
+			var list = MaskQueryParamsAndReturn(urlEncodedData);
 			var jsonData = JsonConvert.SerializeObject(list);
 			return MaskJsonData(jsonData);
 		}
